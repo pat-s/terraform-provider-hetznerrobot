@@ -144,6 +144,7 @@ func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m any) 
 		status = "active"
 	}
 
+	var diags diag.Diagnostics
 	rules := make([]HetznerRobotFirewallRule, 0)
 	rules_data, _ := d.Get("rule").([]any)
 	for _, ruleMap := range rules_data {
@@ -163,6 +164,25 @@ func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m any) 
 		protocol, _ := ruleProperties["protocol"].(string)
 		tcpFlags, _ := ruleProperties["tcp_flags"].(string)
 		action, _ := ruleProperties["action"].(string)
+
+		// Warn about IPv6 restrictions
+		if ipVersion == "ipv6" {
+			if srcIP != "" {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("IPv6 rule '%s': src_ip field ignored", name),
+					Detail:   "Hetzner Robot API does not support source IP filtering for IPv6 rules. The src_ip field will be ignored.",
+				})
+			}
+			if dstIP != "" {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("IPv6 rule '%s': dst_ip field ignored", name),
+					Detail:   "Hetzner Robot API does not support destination IP filtering for IPv6 rules. The dst_ip field will be ignored.",
+				})
+			}
+		}
+
 		rules = append(rules, HetznerRobotFirewallRule{
 			Name:      name,
 			SrcIP:     srcIP,
@@ -186,9 +206,6 @@ func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m any) 
 	}
 
 	d.SetId(serverIP)
-
-	// Warning or errors can be collected in a slice type
-	var diags diag.Diagnostics
 
 	return diags
 }
@@ -247,6 +264,7 @@ func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m any) 
 		status = "active"
 	}
 
+	var diags diag.Diagnostics
 	rules := make([]HetznerRobotFirewallRule, 0)
 	rules_data, _ := d.Get("rule").([]any)
 	for _, ruleMap := range rules_data {
@@ -266,6 +284,25 @@ func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m any) 
 		protocol, _ := ruleProperties["protocol"].(string)
 		tcpFlags, _ := ruleProperties["tcp_flags"].(string)
 		action, _ := ruleProperties["action"].(string)
+
+		// Warn about IPv6 restrictions
+		if ipVersion == "ipv6" {
+			if srcIP != "" {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("IPv6 rule '%s': src_ip field ignored", name),
+					Detail:   "Hetzner Robot API does not support source IP filtering for IPv6 rules. The src_ip field will be ignored.",
+				})
+			}
+			if dstIP != "" {
+				diags = append(diags, diag.Diagnostic{
+					Severity: diag.Warning,
+					Summary:  fmt.Sprintf("IPv6 rule '%s': dst_ip field ignored", name),
+					Detail:   "Hetzner Robot API does not support destination IP filtering for IPv6 rules. The dst_ip field will be ignored.",
+				})
+			}
+		}
+
 		rules = append(rules, HetznerRobotFirewallRule{
 			Name:      name,
 			SrcIP:     srcIP,
@@ -287,9 +324,6 @@ func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m any) 
 	}); err != nil {
 		return diag.FromErr(err)
 	}
-
-	// Warning or errors can be collected in a slice type
-	var diags diag.Diagnostics
 
 	return diags
 }

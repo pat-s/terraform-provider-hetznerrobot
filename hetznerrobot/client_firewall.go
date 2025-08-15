@@ -66,20 +66,27 @@ func (c *HetznerRobotClient) setFirewall(ctx context.Context, firewall HetznerRo
 			ipVersion = "ipv4"
 		}
 
-		// Use exact format and order from working curl command
+		// Basic fields that are always set
 		data.Set(fmt.Sprintf("rules[input][%d][name]", idx), rule.Name)
 		data.Set(fmt.Sprintf("rules[input][%d][ip_version]", idx), ipVersion)
-		data.Set(fmt.Sprintf("rules[input][%d][src_ip]", idx), rule.SrcIP)
-		data.Set(fmt.Sprintf("rules[input][%d][dst_port]", idx), rule.DstPort)
 		data.Set(fmt.Sprintf("rules[input][%d][action]", idx), rule.Action)
 
-		// Only add optional fields if they have values (key lesson from working curl)
-		if rule.DstIP != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][dst_ip]", idx), rule.DstIP)
+		// For IPv6 rules, src_ip and dst_ip CANNOT be set according to API restrictions
+		if ipVersion != "ipv6" {
+			// Only set IP addresses for IPv4 rules
+			data.Set(fmt.Sprintf("rules[input][%d][src_ip]", idx), rule.SrcIP)
+			if rule.DstIP != "" {
+				data.Set(fmt.Sprintf("rules[input][%d][dst_ip]", idx), rule.DstIP)
+			}
 		}
+
+		// Port fields can be set for both IPv4 and IPv6
+		data.Set(fmt.Sprintf("rules[input][%d][dst_port]", idx), rule.DstPort)
 		if rule.SrcPort != "" {
 			data.Set(fmt.Sprintf("rules[input][%d][src_port]", idx), rule.SrcPort)
 		}
+
+		// Protocol and TCP flags
 		if rule.Protocol != "" {
 			data.Set(fmt.Sprintf("rules[input][%d][protocol]", idx), rule.Protocol)
 		}
