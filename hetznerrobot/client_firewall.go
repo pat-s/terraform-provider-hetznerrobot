@@ -59,35 +59,38 @@ func (c *HetznerRobotClient) setFirewall(ctx context.Context, firewall HetznerRo
 	data.Set("whitelist_hos", whitelistHOS)
 	data.Set("status", firewall.Status)
 
+	// Process all rules using the working format
 	for idx, rule := range firewall.Rules.Input {
 		ipVersion := rule.IPVersion
 		if ipVersion == "" {
 			ipVersion = "ipv4"
 		}
-		data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "ip_version"), ipVersion)
-		if rule.Name != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "name"), rule.Name)
-		}
+
+		// Use exact format and order from working curl command
+		data.Set(fmt.Sprintf("rules[input][%d][name]", idx), rule.Name)
+		data.Set(fmt.Sprintf("rules[input][%d][ip_version]", idx), ipVersion)
+		data.Set(fmt.Sprintf("rules[input][%d][src_ip]", idx), rule.SrcIP)
+		data.Set(fmt.Sprintf("rules[input][%d][dst_port]", idx), rule.DstPort)
+		data.Set(fmt.Sprintf("rules[input][%d][action]", idx), rule.Action)
+
+		// Only add optional fields if they have values (key lesson from working curl)
 		if rule.DstIP != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "dst_ip"), rule.DstIP)
-		}
-		if rule.DstPort != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "dst_port"), rule.DstPort)
-		}
-		if rule.SrcIP != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "src_ip"), rule.SrcIP)
+			data.Set(fmt.Sprintf("rules[input][%d][dst_ip]", idx), rule.DstIP)
 		}
 		if rule.SrcPort != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "src_port"), rule.SrcPort)
+			data.Set(fmt.Sprintf("rules[input][%d][src_port]", idx), rule.SrcPort)
 		}
 		if rule.Protocol != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "protocol"), rule.Protocol)
+			data.Set(fmt.Sprintf("rules[input][%d][protocol]", idx), rule.Protocol)
 		}
 		if rule.TCPFlags != "" {
-			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "tcp_flags"), rule.TCPFlags)
+			data.Set(fmt.Sprintf("rules[input][%d][tcp_flags]", idx), rule.TCPFlags)
 		}
-		data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "action"), rule.Action)
 	}
+
+	// Add default output rule - required by API
+	data.Set("rules[output][0][name]", "Allow all")
+	data.Set("rules[output][0][action]", "accept")
 
 	_, err := c.makeAPICall(ctx, "POST", fmt.Sprintf("%s/firewall/%s", c.url, firewall.IP), data, []int{http.StatusOK, http.StatusAccepted})
 	if err != nil {

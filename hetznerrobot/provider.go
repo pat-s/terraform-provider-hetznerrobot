@@ -42,11 +42,30 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
-	username, _ := d.Get("username").(string)
-	password, _ := d.Get("password").(string)
-	url, _ := d.Get("url").(string)
+	username, ok := d.Get("username").(string)
+	if !ok {
+		return nil, diag.Errorf("username must be a string")
+	}
+
+	password, ok := d.Get("password").(string)
+	if !ok {
+		return nil, diag.Errorf("password must be a string")
+	}
+
+	url, ok := d.Get("url").(string)
+	if !ok {
+		return nil, diag.Errorf("url must be a string")
+	}
+
+	if username == "" {
+		return nil, diag.Errorf("username is required for Hetzner Robot authentication")
+	}
+	if password == "" {
+		return nil, diag.Errorf("password is required for Hetzner Robot authentication")
+	}
+
+	client := NewHetznerRobotClient(username, password, url)
 
 	var diags diag.Diagnostics
-
-	return NewHetznerRobotClient(username, password, url), diags
+	return client, diags
 }

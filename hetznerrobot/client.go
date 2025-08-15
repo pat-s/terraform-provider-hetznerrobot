@@ -1,15 +1,13 @@
 package hetznerrobot
 
 import (
-	"slices"
 	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
-
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 type HetznerRobotClient struct {
@@ -31,13 +29,11 @@ func codeIsInExpected(statusCode int, expectedStatusCodes []int) bool {
 }
 
 func (c *HetznerRobotClient) makeAPICall(ctx context.Context, method string, uri string, data url.Values, expectedStatusCodes []int) ([]byte, error) {
-	tflog.Debug(ctx, "requesting Hetzner webservice", map[string]any{
-		"uri":    uri,
-		"method": method,
-		"data":   data,
-	})
-
-	request, err := http.NewRequestWithContext(ctx, method, uri, strings.NewReader(data.Encode()))
+	var body io.Reader
+	if data != nil {
+		body = strings.NewReader(data.Encode())
+	}
+	request, err := http.NewRequestWithContext(ctx, method, uri, body)
 	if err != nil {
 		return nil, err
 	}
@@ -61,11 +57,6 @@ func (c *HetznerRobotClient) makeAPICall(ctx context.Context, method string, uri
 	if err != nil {
 		return nil, err
 	}
-
-	tflog.Debug(ctx, "got hetzner webservice response", map[string]any{
-		"status": response.StatusCode,
-		"body":   string(responseBytes),
-	})
 
 	if !codeIsInExpected(response.StatusCode, expectedStatusCodes) {
 		return nil, fmt.Errorf("hetzner webservice response status %d: %s", response.StatusCode, responseBytes)
