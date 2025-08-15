@@ -17,11 +17,11 @@ steps:
       - apk add --no-cache -q just
       - just vendor
 
-  build-binary:
+  build-binaries:
     image: *golang_image
     commands:
-      - apk add --no-cache -q just
-      - just build
+      - apk add --no-cache -q just git
+      - just build-all
 
   changelog:
     image: docker.io/thegeeklab/git-sv:2.0.4
@@ -32,7 +32,7 @@ steps:
       - sed -i '1,2d' CHANGELOG.md #  remove version
       - cat CHANGELOG.md
 
-  'Create release':
+  'create release':
     image: docker.io/woodpeckerci/plugin-release:0.2.5
     settings:
       note: CHANGELOG.md
