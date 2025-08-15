@@ -10,9 +10,6 @@ clone:
     settings:
       tags: true
 
-depends_on:
-  - images
-
 steps:
   vendor:
     image: *golang_image
