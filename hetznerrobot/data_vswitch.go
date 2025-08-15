@@ -9,6 +9,7 @@ import (
 func dataVSwitch() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceVSwitchRead,
+		Description: "Provides details about a Hetzner Robot vSwitch",
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:        schema.TypeString,
@@ -100,7 +101,7 @@ func dataVSwitch() *schema.Resource {
 	}
 }
 
-func dataSourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	vSwitchID := d.Id()

@@ -9,7 +9,13 @@ import (
 func dataBoot() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceBootRead,
+		Description: "Provides details about a Hetzner Robot server boot configuration",
 		Schema: map[string]*schema.Schema{
+			"server_ip": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Server IP address",
+			},
 			// read-only / computed
 			"active_profile": {
 				Type:        schema.TypeString, // Enum should be better (linux/rescue/...)
@@ -54,13 +60,13 @@ func dataBoot() *schema.Resource {
 		*/
 	}
 }
-func dataSourceBootRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
-	serverID := d.Id()
-	boot, err := c.getBoot(ctx, serverID)
+	serverIP := d.Get("server_ip").(string)
+	boot, err := c.getBoot(ctx, serverIP)
 	if err != nil {
-		return diag.Errorf("Unable to find Boot Profile for server ID %d:\n\t %q", serverID, err)
+		return diag.Errorf("Unable to find Boot Profile for server IP %s:\n\t %q", serverIP, err)
 	}
 
 	d.Set("active_profile", boot.ActiveProfile)
@@ -70,7 +76,7 @@ func dataSourceBootRead(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("language", boot.Language)
 	d.Set("operating_system", boot.OperatingSystem)
 	d.Set("password", boot.Password)
-	d.SetId(serverID)
+	d.SetId(serverIP)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics

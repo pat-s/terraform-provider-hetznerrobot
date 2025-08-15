@@ -12,6 +12,7 @@ func resourceBoot() *schema.Resource {
 		ReadContext:   resourceBootRead,
 		UpdateContext: resourceBootUpdate,
 		DeleteContext: resourceBootDelete,
+		Description:   "Manages boot configuration for a Hetzner Robot server",
 
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceBootImportState,
@@ -73,7 +74,7 @@ func resourceBoot() *schema.Resource {
 	}
 }
 
-func resourceBootImportState(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceBootImportState(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	c := meta.(HetznerRobotClient)
 
 	serverID := d.Id()
@@ -97,7 +98,7 @@ func resourceBootImportState(ctx context.Context, d *schema.ResourceData, meta i
 	return results, nil
 }
 
-func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	serverID := d.Id()
@@ -107,7 +108,7 @@ func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	lang := d.Get("language").(string)
 	authorizedKeys := make([]string, 0)
 	if input := d.Get("authorized_keys"); input != nil {
-		for _, key := range input.([]interface{}) {
+		for _, key := range input.([]any) {
 			authorizedKeys = append(authorizedKeys, key.(string))
 		}
 	}
@@ -128,7 +129,7 @@ func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta interf
 	return diags
 }
 
-func resourceBootRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	serverID := d.Id()
@@ -151,7 +152,7 @@ func resourceBootRead(ctx context.Context, d *schema.ResourceData, meta interfac
 	return diags
 }
 
-func resourceBootUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	serverID := d.Id()
@@ -161,7 +162,7 @@ func resourceBootUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	lang := d.Get("language").(string)
 	authorizedKeys := make([]string, 0)
 	if input := d.Get("authorized_keys"); input != nil {
-		for _, key := range input.([]interface{}) {
+		for _, key := range input.([]any) {
 			authorizedKeys = append(authorizedKeys, key.(string))
 		}
 	}
@@ -181,7 +182,7 @@ func resourceBootUpdate(ctx context.Context, d *schema.ResourceData, meta interf
 	return diags
 }
 
-func resourceBootDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceBootDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 

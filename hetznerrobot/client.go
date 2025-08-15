@@ -35,7 +35,7 @@ func codeIsInExpected(statusCode int, expectedStatusCodes []int) bool {
 }
 
 func (c *HetznerRobotClient) makeAPICall(ctx context.Context, method string, uri string, data url.Values, expectedStatusCodes []int) ([]byte, error) {
-	tflog.Debug(ctx, "requesting Hetzner webservice", map[string]interface{}{
+	tflog.Debug(ctx, "requesting Hetzner webservice", map[string]any{
 		"uri":    uri,
 		"method": method,
 		"data":   data,
@@ -66,7 +66,7 @@ func (c *HetznerRobotClient) makeAPICall(ctx context.Context, method string, uri
 		return nil, err
 	}
 
-	tflog.Debug(ctx, "got hetzner webservice response", map[string]interface{}{
+	tflog.Debug(ctx, "got hetzner webservice response", map[string]any{
 		"status": response.StatusCode,
 		"body":   string(responseBytes),
 	})

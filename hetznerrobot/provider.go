@@ -27,20 +27,20 @@ func Provider() *schema.Provider {
 			},
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"hetzner-robot_boot":     resourceBoot(),
-			"hetzner-robot_firewall": resourceFirewall(),
-			"hetzner-robot_vswitch":  resourceVSwitch(),
+			"hetznerrobot_boot":     resourceBoot(),
+			"hetznerrobot_firewall": resourceFirewall(),
+			"hetznerrobot_vswitch":  resourceVSwitch(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"hetzner-robot_boot":    dataBoot(),
-			"hetzner-robot_server":  dataServer(),
-			"hetzner-robot_vswitch": dataVSwitch(),
+			"hetznerrobot_boot":    dataBoot(),
+			"hetznerrobot_server":  dataServer(),
+			"hetznerrobot_vswitch": dataVSwitch(),
 		},
 		ConfigureContextFunc: providerConfigure,
 	}
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	username := d.Get("username").(string)
 	password := d.Get("password").(string)
 	url := d.Get("url").(string)

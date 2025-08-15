@@ -15,6 +15,7 @@ func resourceFirewall() *schema.Resource {
 		ReadContext:   resourceFirewallRead,
 		UpdateContext: resourceFirewallUpdate,
 		DeleteContext: resourceFirewallDelete,
+		Description:   "Manages firewall configuration for a Hetzner Robot server",
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceFirewallImportState,
 		},
@@ -72,6 +73,15 @@ func resourceFirewall() *schema.Resource {
 							}, false)),
 							Required: true,
 						},
+						"ip_version": {
+							Type: schema.TypeString,
+							Optional: true,
+							Default: "ipv4",
+							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
+								"ipv4",
+								"ipv6",
+							}, false)),
+						},
 					},
 				},
 			},
@@ -79,7 +89,7 @@ func resourceFirewall() *schema.Resource {
 	}
 }
 
-func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m interface{}) ([]*schema.ResourceData, error) {
+func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
 	c := m.(HetznerRobotClient)
 
 	firewallID := d.Id()
@@ -94,17 +104,18 @@ func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m 
 		active = true
 	}
 
-	rules := make([]map[string]interface{}, 0)
+	rules := make([]map[string]any, 0)
 	for _, rule := range firewall.Rules.Input {
-		r := map[string]interface{}{
-			"name":      rule.Name,
-			"src_ip":    rule.SrcIP,
-			"src_port":  rule.SrcPort,
-			"dst_ip":    rule.DstIP,
-			"dst_port":  rule.DstPort,
-			"protocol":  rule.Protocol,
-			"tcp_flags": rule.TCPFlags,
-			"action":    rule.Action,
+		r := map[string]any{
+			"name":       rule.Name,
+			"src_ip":     rule.SrcIP,
+			"src_port":   rule.SrcPort,
+			"dst_ip":     rule.DstIP,
+			"dst_port":   rule.DstPort,
+			"protocol":   rule.Protocol,
+			"tcp_flags":  rule.TCPFlags,
+			"action":     rule.Action,
+			"ip_version": rule.IPVersion,
 		}
 		rules = append(rules, r)
 	}
@@ -120,7 +131,7 @@ func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m 
 	return results, nil
 }
 
-func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(HetznerRobotClient)
 
 	serverIP := d.Get("server_ip").(string)
@@ -131,17 +142,22 @@ func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	rules := make([]HetznerRobotFirewallRule, 0)
-	for _, ruleMap := range d.Get("rule").([]interface{}) {
-		ruleProperties := ruleMap.(map[string]interface{})
+	for _, ruleMap := range d.Get("rule").([]any) {
+		ruleProperties := ruleMap.(map[string]any)
+		ipVersion := "ipv4"
+		if v, ok := ruleProperties["ip_version"].(string); ok && v != "" {
+			ipVersion = v
+		}
 		rules = append(rules, HetznerRobotFirewallRule{
-			Name:     ruleProperties["name"].(string),
-			SrcIP:    ruleProperties["src_ip"].(string),
-			SrcPort:  ruleProperties["src_port"].(string),
-			DstIP:    ruleProperties["dst_ip"].(string),
-			DstPort:  ruleProperties["dst_port"].(string),
-			Protocol: ruleProperties["protocol"].(string),
-			TCPFlags: ruleProperties["tcp_flags"].(string),
-			Action:   ruleProperties["action"].(string),
+			Name:      ruleProperties["name"].(string),
+			SrcIP:     ruleProperties["src_ip"].(string),
+			SrcPort:   ruleProperties["src_port"].(string),
+			DstIP:     ruleProperties["dst_ip"].(string),
+			DstPort:   ruleProperties["dst_port"].(string),
+			Protocol:  ruleProperties["protocol"].(string),
+			TCPFlags:  ruleProperties["tcp_flags"].(string),
+			Action:    ruleProperties["action"].(string),
+			IPVersion: ipVersion,
 		})
 	}
 
@@ -162,7 +178,7 @@ func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(HetznerRobotClient)
 
 	serverIP := d.Id()
@@ -177,17 +193,18 @@ func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m interfa
 		active = true
 	}
 
-	rules := make([]map[string]interface{}, 0)
+	rules := make([]map[string]any, 0)
 	for _, rule := range firewall.Rules.Input {
-		r := map[string]interface{}{
-			"name":      rule.Name,
-			"src_ip":    rule.SrcIP,
-			"src_port":  rule.SrcPort,
-			"dst_ip":    rule.DstIP,
-			"dst_port":  rule.DstPort,
-			"protocol":  rule.Protocol,
-			"tcp_flags": rule.TCPFlags,
-			"action":    rule.Action,
+		r := map[string]any{
+			"name":       rule.Name,
+			"src_ip":     rule.SrcIP,
+			"src_port":   rule.SrcPort,
+			"dst_ip":     rule.DstIP,
+			"dst_port":   rule.DstPort,
+			"protocol":   rule.Protocol,
+			"tcp_flags":  rule.TCPFlags,
+			"action":     rule.Action,
+			"ip_version": rule.IPVersion,
 		}
 		rules = append(rules, r)
 	}
@@ -202,7 +219,7 @@ func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m interfa
 	return diags
 }
 
-func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(HetznerRobotClient)
 
 	serverIP := d.Get("server_ip").(string)
@@ -213,17 +230,22 @@ func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	}
 
 	rules := make([]HetznerRobotFirewallRule, 0)
-	for _, ruleMap := range d.Get("rule").([]interface{}) {
-		ruleProperties := ruleMap.(map[string]interface{})
+	for _, ruleMap := range d.Get("rule").([]any) {
+		ruleProperties := ruleMap.(map[string]any)
+		ipVersion := "ipv4"
+		if v, ok := ruleProperties["ip_version"].(string); ok && v != "" {
+			ipVersion = v
+		}
 		rules = append(rules, HetznerRobotFirewallRule{
-			Name:     ruleProperties["name"].(string),
-			SrcIP:    ruleProperties["src_ip"].(string),
-			SrcPort:  ruleProperties["src_port"].(string),
-			DstIP:    ruleProperties["dst_ip"].(string),
-			DstPort:  ruleProperties["dst_port"].(string),
-			Protocol: ruleProperties["protocol"].(string),
-			TCPFlags: ruleProperties["tcp_flags"].(string),
-			Action:   ruleProperties["action"].(string),
+			Name:      ruleProperties["name"].(string),
+			SrcIP:     ruleProperties["src_ip"].(string),
+			SrcPort:   ruleProperties["src_port"].(string),
+			DstIP:     ruleProperties["dst_ip"].(string),
+			DstPort:   ruleProperties["dst_port"].(string),
+			Protocol:  ruleProperties["protocol"].(string),
+			TCPFlags:  ruleProperties["tcp_flags"].(string),
+			Action:    ruleProperties["action"].(string),
+			IPVersion: ipVersion,
 		})
 	}
 
@@ -242,7 +264,7 @@ func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m inter
 	return diags
 }
 
-func resourceFirewallDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func resourceFirewallDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 

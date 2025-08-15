@@ -24,14 +24,15 @@ type HetznerRobotFirewallRules struct {
 }
 
 type HetznerRobotFirewallRule struct {
-	Name     string `json:"name"`
-	DstIP    string `json:"dst_ip"`
-	DstPort  string `json:"dst_port"`
-	SrcIP    string `json:"src_ip"`
-	SrcPort  string `json:"src_port"`
-	Protocol string `json:"protocol"`
-	TCPFlags string `json:"tcp_flags"`
-	Action   string `json:"action"`
+	Name      string `json:"name"`
+	DstIP     string `json:"dst_ip"`
+	DstPort   string `json:"dst_port"`
+	SrcIP     string `json:"src_ip"`
+	SrcPort   string `json:"src_port"`
+	Protocol  string `json:"protocol"`
+	TCPFlags  string `json:"tcp_flags"`
+	Action    string `json:"action"`
+	IPVersion string `json:"ip_version"`
 }
 
 func (c *HetznerRobotClient) getFirewall(ctx context.Context, ip string) (*HetznerRobotFirewall, error) {
@@ -60,7 +61,11 @@ func (c *HetznerRobotClient) setFirewall(ctx context.Context, firewall HetznerRo
 	data.Set("status", firewall.Status)
 
 	for idx, rule := range firewall.Rules.Input {
-		data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "ip_version"), "ipv4")
+		ipVersion := rule.IPVersion
+		if ipVersion == "" {
+			ipVersion = "ipv4"
+		}
+		data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "ip_version"), ipVersion)
 		if rule.Name != "" {
 			data.Set(fmt.Sprintf("rules[input][%d][%s]", idx, "name"), rule.Name)
 		}

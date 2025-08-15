@@ -14,6 +14,7 @@ func resourceVSwitch() *schema.Resource {
 		ReadContext:   resourceVSwitchRead,
 		UpdateContext: resourceVSwitchUpdate,
 		DeleteContext: resourceVSwitchDelete,
+		Description:   "Manages vSwitch configuration for Hetzner Robot servers",
 
 		Importer: &schema.ResourceImporter{
 			StateContext: resourceVSwitchImportState,
@@ -110,7 +111,7 @@ func resourceVSwitch() *schema.Resource {
 		},
 	}
 }
-func resourceVSwitchImportState(ctx context.Context, d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+func resourceVSwitchImportState(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
 	c := meta.(HetznerRobotClient)
 
 	vSwitchID := d.Id()
@@ -131,7 +132,7 @@ func resourceVSwitchImportState(ctx context.Context, d *schema.ResourceData, met
 	return results, nil
 }
 
-func resourceVSwitchCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVSwitchCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	name := d.Get("name").(string)
@@ -153,7 +154,7 @@ func resourceVSwitchCreate(ctx context.Context, d *schema.ResourceData, meta int
 	return diags
 }
 
-func resourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	vSwitchID := d.Id()
@@ -175,7 +176,7 @@ func resourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta inter
 	return diags
 }
 
-func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	vSwitchID := d.Id()
@@ -189,17 +190,17 @@ func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	if d.HasChange("servers") {
 		o, n := d.GetChange("servers")
 
-		oldServers := o.([]interface{})
-		newServers := n.([]interface{})
+		oldServers := o.([]any)
+		newServers := n.([]any)
 
 		mb := make(map[int]struct{}, len(newServers))
 		for _, x := range newServers {
-			srv := x.(map[string]interface{})
+			srv := x.(map[string]any)
 			mb[srv["server_number"].(int)] = struct{}{}
 		}
 		var serversToRemove []HetznerRobotVSwitchServer
 		for _, x := range oldServers {
-			srv := x.(map[string]interface{})
+			srv := x.(map[string]any)
 			srvNum := srv["server_number"].(int)
 			if _, found := mb[srvNum]; !found {
 				serversToRemove = append(serversToRemove, HetznerRobotVSwitchServer{ServerNumber: srvNum})
@@ -212,12 +213,12 @@ func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta int
 
 		ma := make(map[int]struct{}, len(oldServers))
 		for _, x := range oldServers {
-			srv := x.(map[string]interface{})
+			srv := x.(map[string]any)
 			ma[srv["server_number"].(int)] = struct{}{}
 		}
 		var serversToAdd []HetznerRobotVSwitchServer
 		for _, x := range newServers {
-			srv := x.(map[string]interface{})
+			srv := x.(map[string]any)
 			srvNum := srv["server_number"].(int)
 			if _, found := ma[srvNum]; !found {
 				serversToAdd = append(serversToAdd, HetznerRobotVSwitchServer{ServerNumber: srvNum})
@@ -232,7 +233,7 @@ func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta int
 	return resourceVSwitchRead(ctx, d, meta)
 }
 
-func resourceVSwitchDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceVSwitchDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	vSwitchID := d.Id()

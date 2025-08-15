@@ -10,6 +10,7 @@ import (
 func dataServer() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceServerRead,
+		Description: "Provides details about a Hetzner Robot server",
 		Schema: map[string]*schema.Schema{
 			"server_number": {
 				Type:        schema.TypeInt,
@@ -133,7 +134,7 @@ func dataServer() *schema.Resource {
 	}
 }
 
-func dataSourceServerRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceServerRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(HetznerRobotClient)
 
 	serverNumber := d.Get("server_number").(int)
