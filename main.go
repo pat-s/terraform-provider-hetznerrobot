@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
 	"github.com/strng-solutions/terraform-provider-hetzner-robot/hetznerrobot"
 )
 
-// Run "go generate" to format example terraform files and generate the docs for the registry/website
+// Run "go generate" to format example terraform files and generate the docs for the registry/website.
 
 // If you do not have terraform installed, you can remove the formatting command, but it's suggested ensuring
 // the documentation is formatted properly.
@@ -26,9 +26,7 @@ func main() {
 	opts := &plugin.ServeOpts{
 		Debug:        debug,
 		ProviderAddr: "registry.terraform.io/strng-solutions/hetzner-robot",
-		ProviderFunc: func() *schema.Provider {
-			return hetznerrobot.Provider()
-		},
+		ProviderFunc: hetznerrobot.Provider,
 	}
 
 	plugin.Serve(opts)

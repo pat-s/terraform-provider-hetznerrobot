@@ -2,6 +2,7 @@ package hetznerrobot
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -60,22 +61,43 @@ func dataBoot() *schema.Resource {
 		*/
 	}
 }
-func dataSourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
 
-	serverIP := d.Get("server_ip").(string)
+func dataSourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
+
+	serverIP, ok := d.Get("server_ip").(string)
+	if !ok {
+		return diag.Errorf("Unable to get server_ip as string")
+	}
 	boot, err := c.getBoot(ctx, serverIP)
 	if err != nil {
 		return diag.Errorf("Unable to find Boot Profile for server IP %s:\n\t %q", serverIP, err)
 	}
 
-	d.Set("active_profile", boot.ActiveProfile)
-	d.Set("architecture", boot.Architecture)
-	d.Set("ipv4_address", boot.ServerIPv4)
-	d.Set("ipv6_network", boot.ServerIPv6)
-	d.Set("language", boot.Language)
-	d.Set("operating_system", boot.OperatingSystem)
-	d.Set("password", boot.Password)
+	if err := d.Set("active_profile", boot.ActiveProfile); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("architecture", boot.Architecture); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("ipv4_address", boot.ServerIPv4); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("ipv6_network", boot.ServerIPv6); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("language", boot.Language); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("operating_system", boot.OperatingSystem); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("password", boot.Password); err != nil {
+		return diag.FromErr(err)
+	}
 	d.SetId(serverIP)
 
 	// Warning or errors can be collected in a slice type

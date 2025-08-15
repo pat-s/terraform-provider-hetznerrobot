@@ -48,7 +48,7 @@ func (c *HetznerRobotClient) getBoot(ctx context.Context, serverID string) (*Boo
 	}
 
 	bootProfile.Architecture = gjson.Get(activeBoot, "arch").String()
-	// bootProfile.AuthorizedKeys = gjson.Get(activeBoot, "authorised_keys").Array()
+	// bootProfile.AuthorizedKeys = gjson.Get(activeBoot, "authorized_keys").Array()
 	// bootProfile.HostKeys = gjson.Get(activeBoot, "host_keys").Array()
 	bootProfile.Password = gjson.Get(activeBoot, "password").String()
 	bootProfile.ServerID = int(gjson.Get(activeBoot, "server_num").Int())
@@ -97,7 +97,7 @@ func (c *HetznerRobotClient) setBootProfile(ctx context.Context, serverID string
 	}
 
 	bootProfile.Architecture = gjson.Get(activeBoot, "arch").String()
-	// bootProfile.AuthorizedKeys = gjson.Get(activeBoot, "authorised_keys").Array()
+	// bootProfile.AuthorizedKeys = gjson.Get(activeBoot, "authorized_keys").Array()
 	// bootProfile.HostKeys = gjson.Get(activeBoot, "host_keys").Array()
 	bootProfile.Password = gjson.Get(activeBoot, "password").String()
 	bootProfile.ServerID = int(gjson.Get(activeBoot, "server_num").Int())

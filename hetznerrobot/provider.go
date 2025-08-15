@@ -2,11 +2,12 @@ package hetznerrobot
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-// Provider -
+// Provider -.
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
@@ -41,9 +42,9 @@ func Provider() *schema.Provider {
 }
 
 func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
-	username := d.Get("username").(string)
-	password := d.Get("password").(string)
-	url := d.Get("url").(string)
+	username, _ := d.Get("username").(string)
+	password, _ := d.Get("password").(string)
+	url, _ := d.Get("url").(string)
 
 	var diags diag.Diagnostics
 

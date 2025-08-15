@@ -2,9 +2,10 @@ package hetznerrobot
 
 import (
 	"context"
+	"strconv"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"strconv"
 )
 
 func dataServer() *schema.Resource {
@@ -37,7 +38,7 @@ func dataServer() *schema.Resource {
 				Computed:    true,
 				Description: "Data center",
 			},
-			"is_cancelled": {
+			"is_canceled": {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Status of server cancellation",
@@ -135,25 +136,53 @@ func dataServer() *schema.Resource {
 }
 
 func dataSourceServerRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
-	serverNumber := d.Get("server_number").(int)
+	serverNumber, ok := d.Get("server_number").(int)
+	if !ok {
+		return diag.Errorf("Unable to get server_number as int")
+	}
 
 	server, err := c.getServer(ctx, serverNumber)
 	if err != nil {
-		return diag.Errorf("Unable to find Server with IP %s:\n\t %q", serverNumber, err)
+		return diag.Errorf("Unable to find Server with number %d:\n\t %q", serverNumber, err)
 	}
-	d.Set("datacenter", server.DataCenter)
-	d.Set("is_cancelled", server.Cancelled)
-	d.Set("paid_until", server.PaidUntil)
-	d.Set("product", server.Product)
-	d.Set("server_ip_addresses", server.IPs)
-	d.Set("server_ip", server.ServerIP)
-	d.Set("server_ip_v6_net", server.ServerIPv6)
-	d.Set("server_name", server.ServerName)
-	d.Set("server_subnets", server.Subnets)
-	d.Set("status", server.Status)
-	d.Set("traffic", server.Traffic)
+	if err := d.Set("datacenter", server.DataCenter); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("is_canceled", server.Canceled); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("paid_until", server.PaidUntil); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("product", server.Product); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("server_ip_addresses", server.IPs); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("server_ip", server.ServerIP); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("server_ip_v6_net", server.ServerIPv6); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("server_name", server.ServerName); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("server_subnets", server.Subnets); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("status", server.Status); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("traffic", server.Traffic); err != nil {
+		return diag.FromErr(err)
+	}
 	d.SetId(strconv.Itoa(server.ServerNumber))
 
 	// Warning or errors can be collected in a slice type

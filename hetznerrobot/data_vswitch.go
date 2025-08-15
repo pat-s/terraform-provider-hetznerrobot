@@ -2,6 +2,7 @@ package hetznerrobot
 
 import (
 	"context"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -21,7 +22,7 @@ func dataVSwitch() *schema.Resource {
 				Computed:    true,
 				Description: "VLAN ID",
 			},
-			"is_cancelled": {
+			"is_canceled": {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Cancellation status",
@@ -102,20 +103,35 @@ func dataVSwitch() *schema.Resource {
 }
 
 func dataSourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	vSwitchID := d.Id()
 	vSwitch, err := c.getVSwitch(ctx, vSwitchID)
 	if err != nil {
-		return diag.Errorf("Unable to find VSwitch with ID %d:\n\t %q", vSwitchID, err)
+		return diag.Errorf("Unable to find VSwitch with ID %s:\n\t %q", vSwitchID, err)
 	}
 
-	d.Set("name", vSwitch.Name)
-	d.Set("vlan", vSwitch.Vlan)
-	d.Set("is_cancelled", vSwitch.Cancelled)
-	d.Set("servers", vSwitch.Server)
-	d.Set("subnets", vSwitch.Subnet)
-	d.Set("cloud_networks", vSwitch.CloudNetwork)
+	if err := d.Set("name", vSwitch.Name); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("vlan", vSwitch.Vlan); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("is_canceled", vSwitch.Canceled); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("servers", vSwitch.Server); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("subnets", vSwitch.Subnet); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("cloud_networks", vSwitch.CloudNetwork); err != nil {
+		return diag.FromErr(err)
+	}
 	d.SetId(vSwitchID)
 
 	// Warning or errors can be collected in a slice type

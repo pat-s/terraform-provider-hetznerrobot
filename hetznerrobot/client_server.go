@@ -25,7 +25,7 @@ type HetznerRobotServer struct {
 	DataCenter       string                     `json:"dc"`
 	Traffic          string                     `json:"traffic"`
 	Status           string                     `json:"status"`
-	Cancelled        bool                       `json:"cancelled"`
+	Canceled         bool                       `json:"canceled"`
 	PaidUntil        string                     `json:"paid_until"`
 	IPs              []string                   `json:"ip"`
 	Subnets          []HetznerRobotServerSubnet `json:"subnet"`

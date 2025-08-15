@@ -36,7 +36,6 @@ type HetznerRobotFirewallRule struct {
 }
 
 func (c *HetznerRobotClient) getFirewall(ctx context.Context, ip string) (*HetznerRobotFirewall, error) {
-
 	bytes, err := c.makeAPICall(ctx, "GET", fmt.Sprintf("%s/firewall/%s", c.url, ip), nil, []int{http.StatusOK, http.StatusAccepted})
 	if err != nil {
 		return nil, err

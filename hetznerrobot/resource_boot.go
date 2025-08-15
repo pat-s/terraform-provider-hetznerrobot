@@ -2,6 +2,8 @@ package hetznerrobot
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
@@ -75,7 +77,10 @@ func resourceBoot() *schema.Resource {
 }
 
 func resourceBootImportState(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return nil, fmt.Errorf("unable to cast meta to HetznerRobotClient")
+	}
 
 	serverID := d.Id()
 
@@ -84,14 +89,14 @@ func resourceBootImportState(ctx context.Context, d *schema.ResourceData, meta a
 		return nil, err
 	}
 
-	d.Set("active_profile", boot.ActiveProfile)
-	d.Set("architecture", boot.Architecture)
-	d.Set("ipv4_address", boot.ServerIPv4)
-	d.Set("ipv6_network", boot.ServerIPv6)
-	d.Set("language", boot.Language)
-	d.Set("operating_system", boot.OperatingSystem)
-	d.Set("password", boot.Password)
-	d.Set("server_id", serverID)
+	_ = d.Set("active_profile", boot.ActiveProfile)
+	_ = d.Set("architecture", boot.Architecture)
+	_ = d.Set("ipv4_address", boot.ServerIPv4)
+	_ = d.Set("ipv6_network", boot.ServerIPv6)
+	_ = d.Set("language", boot.Language)
+	_ = d.Set("operating_system", boot.OperatingSystem)
+	_ = d.Set("password", boot.Password)
+	_ = d.Set("server_id", serverID)
 
 	results := make([]*schema.ResourceData, 1)
 	results[0] = d
@@ -99,17 +104,28 @@ func resourceBootImportState(ctx context.Context, d *schema.ResourceData, meta a
 }
 
 func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	serverID := d.Id()
-	activeBootProfile := d.Get("active_profile").(string)
-	arch := d.Get("architecture").(string)
-	os := d.Get("operating_system").(string)
-	lang := d.Get("language").(string)
+	activeBootProfile, _ := d.Get("active_profile").(string)
+	arch, _ := d.Get("architecture").(string)
+	os, _ := d.Get("operating_system").(string)
+	lang, _ := d.Get("language").(string)
 	authorizedKeys := make([]string, 0)
 	if input := d.Get("authorized_keys"); input != nil {
-		for _, key := range input.([]any) {
-			authorizedKeys = append(authorizedKeys, key.(string))
+		keys, ok := input.([]any)
+		if !ok {
+			keys = []any{}
+		}
+		for _, key := range keys {
+			keyStr, ok := key.(string)
+			if !ok {
+				continue
+			}
+			authorizedKeys = append(authorizedKeys, keyStr)
 		}
 	}
 
@@ -118,9 +134,9 @@ func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	d.Set("ipv4_address", bootProfile.ServerIPv4)
-	d.Set("ipv6_network", bootProfile.ServerIPv6)
-	d.Set("password", bootProfile.Password)
+	_ = d.Set("ipv4_address", bootProfile.ServerIPv4)
+	_ = d.Set("ipv6_network", bootProfile.ServerIPv6)
+	_ = d.Set("password", bootProfile.Password)
 	d.SetId(serverID)
 
 	// Warning or errors can be collected in a slice type
@@ -130,7 +146,10 @@ func resourceBootCreate(ctx context.Context, d *schema.ResourceData, meta any) d
 }
 
 func resourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	serverID := d.Id()
 	boot, err := c.getBoot(ctx, serverID)
@@ -138,13 +157,13 @@ func resourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 		return diag.FromErr(err)
 	}
 
-	d.Set("active_profile", boot.ActiveProfile)
-	d.Set("architecture", boot.Architecture)
-	d.Set("ipv4_address", boot.ServerIPv4)
-	d.Set("ipv6_network", boot.ServerIPv6)
-	d.Set("language", boot.Language)
-	d.Set("operating_system", boot.OperatingSystem)
-	d.Set("password", boot.Password)
+	_ = d.Set("active_profile", boot.ActiveProfile)
+	_ = d.Set("architecture", boot.Architecture)
+	_ = d.Set("ipv4_address", boot.ServerIPv4)
+	_ = d.Set("ipv6_network", boot.ServerIPv6)
+	_ = d.Set("language", boot.Language)
+	_ = d.Set("operating_system", boot.OperatingSystem)
+	_ = d.Set("password", boot.Password)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
@@ -153,17 +172,28 @@ func resourceBootRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 }
 
 func resourceBootUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	serverID := d.Id()
-	activeBootProfile := d.Get("active_profile").(string)
-	arch := d.Get("architecture").(string)
-	os := d.Get("operating_system").(string)
-	lang := d.Get("language").(string)
+	activeBootProfile, _ := d.Get("active_profile").(string)
+	arch, _ := d.Get("architecture").(string)
+	os, _ := d.Get("operating_system").(string)
+	lang, _ := d.Get("language").(string)
 	authorizedKeys := make([]string, 0)
 	if input := d.Get("authorized_keys"); input != nil {
-		for _, key := range input.([]any) {
-			authorizedKeys = append(authorizedKeys, key.(string))
+		keys, ok := input.([]any)
+		if !ok {
+			keys = []any{}
+		}
+		for _, key := range keys {
+			keyStr, ok := key.(string)
+			if !ok {
+				continue
+			}
+			authorizedKeys = append(authorizedKeys, keyStr)
 		}
 	}
 
@@ -172,9 +202,9 @@ func resourceBootUpdate(ctx context.Context, d *schema.ResourceData, meta any) d
 		return diag.FromErr(err)
 	}
 
-	d.Set("ipv4_address", bootProfile.ServerIPv4)
-	d.Set("ipv6_network", bootProfile.ServerIPv6)
-	d.Set("password", bootProfile.Password)
+	_ = d.Set("ipv4_address", bootProfile.ServerIPv4)
+	_ = d.Set("ipv6_network", bootProfile.ServerIPv6)
+	_ = d.Set("password", bootProfile.Password)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics

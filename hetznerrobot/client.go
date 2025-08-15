@@ -1,6 +1,7 @@
 package hetznerrobot
 
 import (
+	"slices"
 	"context"
 	"fmt"
 	"io"
@@ -26,12 +27,7 @@ func NewHetznerRobotClient(username string, password string, url string) Hetzner
 }
 
 func codeIsInExpected(statusCode int, expectedStatusCodes []int) bool {
-	for _, expectedStatusCode := range expectedStatusCodes {
-		if statusCode == expectedStatusCode {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(expectedStatusCodes, statusCode)
 }
 
 func (c *HetznerRobotClient) makeAPICall(ctx context.Context, method string, uri string, data url.Values, expectedStatusCodes []int) ([]byte, error) {
@@ -56,7 +52,7 @@ func (c *HetznerRobotClient) makeAPICall(ctx context.Context, method string, uri
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("error sending request: %v", err)
+		return nil, fmt.Errorf("error sending request: %w", err)
 	}
 
 	defer response.Body.Close()

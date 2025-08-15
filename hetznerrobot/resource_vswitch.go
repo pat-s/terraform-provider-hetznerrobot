@@ -3,9 +3,10 @@ package hetznerrobot
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"strconv"
 )
 
 func resourceVSwitch() *schema.Resource {
@@ -32,7 +33,7 @@ func resourceVSwitch() *schema.Resource {
 				Description: "VLAN ID",
 			},
 			// computed / read-only fields
-			"is_cancelled": {
+			"is_canceled": {
 				Type:        schema.TypeBool,
 				Computed:    true,
 				Description: "Cancellation status",
@@ -111,21 +112,25 @@ func resourceVSwitch() *schema.Resource {
 		},
 	}
 }
+
 func resourceVSwitchImportState(ctx context.Context, d *schema.ResourceData, meta any) ([]*schema.ResourceData, error) {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return nil, fmt.Errorf("unable to cast meta to HetznerRobotClient")
+	}
 
 	vSwitchID := d.Id()
 	vSwitch, err := c.getVSwitch(ctx, vSwitchID)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to find VSwitch with ID %d:\n\t %q", vSwitchID, err)
+		return nil, fmt.Errorf("unable to find VSwitch with ID %s: %w", vSwitchID, err)
 	}
 
-	d.Set("name", vSwitch.Name)
-	d.Set("vlan", vSwitch.Vlan)
-	d.Set("is_cancelled", vSwitch.Cancelled)
-	d.Set("servers", vSwitch.Server)
-	d.Set("subnets", vSwitch.Subnet)
-	d.Set("cloud_networks", vSwitch.CloudNetwork)
+	_ = d.Set("name", vSwitch.Name)
+	_ = d.Set("vlan", vSwitch.Vlan)
+	_ = d.Set("is_canceled", vSwitch.Canceled)
+	_ = d.Set("servers", vSwitch.Server)
+	_ = d.Set("subnets", vSwitch.Subnet)
+	_ = d.Set("cloud_networks", vSwitch.CloudNetwork)
 
 	results := make([]*schema.ResourceData, 1)
 	results[0] = d
@@ -133,19 +138,22 @@ func resourceVSwitchImportState(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceVSwitchCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
-
-	name := d.Get("name").(string)
-	vlan := d.Get("vlan").(int)
-	vSwitch, err := c.createVSwitch(ctx, name, vlan)
-	if err != nil {
-		return diag.FromErr(fmt.Errorf("Unable to create VSwitch :\n\t %q", err))
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
 	}
 
-	d.Set("is_cancelled", vSwitch.Cancelled)
-	d.Set("servers", vSwitch.Server)
-	d.Set("subnets", vSwitch.Subnet)
-	d.Set("cloud_networks", vSwitch.CloudNetwork)
+	name, _ := d.Get("name").(string)
+	vlan, _ := d.Get("vlan").(int)
+	vSwitch, err := c.createVSwitch(ctx, name, vlan)
+	if err != nil {
+		return diag.FromErr(fmt.Errorf("unable to create VSwitch: %w", err))
+	}
+
+	_ = d.Set("is_canceled", vSwitch.Canceled)
+	_ = d.Set("servers", vSwitch.Server)
+	_ = d.Set("subnets", vSwitch.Subnet)
+	_ = d.Set("cloud_networks", vSwitch.CloudNetwork)
 	d.SetId(strconv.Itoa(vSwitch.ID))
 
 	// Warning or errors can be collected in a slice type
@@ -155,20 +163,23 @@ func resourceVSwitchCreate(ctx context.Context, d *schema.ResourceData, meta any
 }
 
 func resourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	vSwitchID := d.Id()
 	vSwitch, err := c.getVSwitch(ctx, vSwitchID)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("Unable to find VSwitch with ID %s:\n\t %q", vSwitchID, err))
+		return diag.FromErr(fmt.Errorf("unable to find VSwitch with ID %s: %w", vSwitchID, err))
 	}
 
-	d.Set("name", vSwitch.Name)
-	d.Set("vlan", vSwitch.Vlan)
-	d.Set("cancelled", vSwitch.Cancelled)
-	d.Set("servers", vSwitch.Server)
-	d.Set("subnets", vSwitch.Subnet)
-	d.Set("cloud_networks", vSwitch.CloudNetwork)
+	_ = d.Set("name", vSwitch.Name)
+	_ = d.Set("vlan", vSwitch.Vlan)
+	_ = d.Set("canceled", vSwitch.Canceled)
+	_ = d.Set("servers", vSwitch.Server)
+	_ = d.Set("subnets", vSwitch.Subnet)
+	_ = d.Set("cloud_networks", vSwitch.CloudNetwork)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
@@ -177,11 +188,14 @@ func resourceVSwitchRead(ctx context.Context, d *schema.ResourceData, meta any) 
 }
 
 func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	vSwitchID := d.Id()
-	name := d.Get("name").(string)
-	vlan := d.Get("vlan").(int)
+	name, _ := d.Get("name").(string)
+	vlan, _ := d.Get("vlan").(int)
 	err := c.updateVSwitch(ctx, vSwitchID, name, vlan)
 	if err != nil {
 		return diag.Errorf("Unable to update VSwitch:\n\t %q", err)
@@ -190,18 +204,29 @@ func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta any
 	if d.HasChange("servers") {
 		o, n := d.GetChange("servers")
 
-		oldServers := o.([]any)
-		newServers := n.([]any)
+		oldServers, _ := o.([]any)
+		newServers, _ := n.([]any)
 
 		mb := make(map[int]struct{}, len(newServers))
 		for _, x := range newServers {
-			srv := x.(map[string]any)
-			mb[srv["server_number"].(int)] = struct{}{}
+			srv, ok := x.(map[string]any)
+			if !ok {
+				continue
+			}
+			if serverNum, ok := srv["server_number"].(int); ok {
+				mb[serverNum] = struct{}{}
+			}
 		}
 		var serversToRemove []HetznerRobotVSwitchServer
 		for _, x := range oldServers {
-			srv := x.(map[string]any)
-			srvNum := srv["server_number"].(int)
+			srv, ok := x.(map[string]any)
+			if !ok {
+				continue
+			}
+			srvNum, ok := srv["server_number"].(int)
+			if !ok {
+				continue
+			}
 			if _, found := mb[srvNum]; !found {
 				serversToRemove = append(serversToRemove, HetznerRobotVSwitchServer{ServerNumber: srvNum})
 			}
@@ -213,13 +238,24 @@ func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta any
 
 		ma := make(map[int]struct{}, len(oldServers))
 		for _, x := range oldServers {
-			srv := x.(map[string]any)
-			ma[srv["server_number"].(int)] = struct{}{}
+			srv, ok := x.(map[string]any)
+			if !ok {
+				continue
+			}
+			if serverNum, ok := srv["server_number"].(int); ok {
+				ma[serverNum] = struct{}{}
+			}
 		}
 		var serversToAdd []HetznerRobotVSwitchServer
 		for _, x := range newServers {
-			srv := x.(map[string]any)
-			srvNum := srv["server_number"].(int)
+			srv, ok := x.(map[string]any)
+			if !ok {
+				continue
+			}
+			srvNum, ok := srv["server_number"].(int)
+			if !ok {
+				continue
+			}
 			if _, found := ma[srvNum]; !found {
 				serversToAdd = append(serversToAdd, HetznerRobotVSwitchServer{ServerNumber: srvNum})
 			}
@@ -234,12 +270,15 @@ func resourceVSwitchUpdate(ctx context.Context, d *schema.ResourceData, meta any
 }
 
 func resourceVSwitchDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
-	c := meta.(HetznerRobotClient)
+	c, ok := meta.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	vSwitchID := d.Id()
 	err := c.deleteVSwitch(ctx, vSwitchID)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("Unable to find VSwitch with ID %s:\n\t %q", vSwitchID, err))
+		return diag.FromErr(fmt.Errorf("unable to find VSwitch with ID %s: %w", vSwitchID, err))
 	}
 
 	// Warning or errors can be collected in a slice type

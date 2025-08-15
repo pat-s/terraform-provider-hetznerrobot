@@ -34,7 +34,7 @@ type HetznerRobotVSwitch struct {
 	ID           int                               `json:"id"`
 	Name         string                            `json:"name"`
 	Vlan         int                               `json:"vlan"`
-	Cancelled    bool                              `json:"cancelled"`
+	Canceled     bool                              `json:"canceled"`
 	Server       []HetznerRobotVSwitchServer       `json:"server"`
 	Subnet       []HetznerRobotVSwitchSubnet       `json:"subnet"`
 	CloudNetwork []HetznerRobotVSwitchCloudNetwork `json:"cloud_network"`

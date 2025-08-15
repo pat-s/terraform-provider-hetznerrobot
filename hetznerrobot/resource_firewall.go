@@ -74,9 +74,9 @@ func resourceFirewall() *schema.Resource {
 							Required: true,
 						},
 						"ip_version": {
-							Type: schema.TypeString,
+							Type:     schema.TypeString,
 							Optional: true,
-							Default: "ipv4",
+							Default:  "ipv4",
 							ValidateDiagFunc: validation.ToDiagFunc(validation.StringInSlice([]string{
 								"ipv4",
 								"ipv6",
@@ -90,19 +90,19 @@ func resourceFirewall() *schema.Resource {
 }
 
 func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m any) ([]*schema.ResourceData, error) {
-	c := m.(HetznerRobotClient)
+	c, ok := m.(HetznerRobotClient)
+	if !ok {
+		return nil, fmt.Errorf("unable to cast meta to HetznerRobotClient")
+	}
 
 	firewallID := d.Id()
 
 	firewall, err := c.getFirewall(ctx, firewallID)
 	if err != nil {
-		return nil, fmt.Errorf("could not find firewall with ID %s: %s", firewallID, err)
+		return nil, fmt.Errorf("could not find firewall with ID %s: %w", firewallID, err)
 	}
 
-	active := false
-	if firewall.Status == "active" {
-		active = true
-	}
+	active := firewall.Status == "active"
 
 	rules := make([]map[string]any, 0)
 	for _, rule := range firewall.Rules.Input {
@@ -120,10 +120,10 @@ func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m 
 		rules = append(rules, r)
 	}
 
-	d.Set("active", active)
-	d.Set("rule", rules)
-	d.Set("server_ip", firewall.IP)
-	d.Set("whitelist_hos", firewall.WhitelistHetznerServices)
+	_ = d.Set("active", active)
+	_ = d.Set("rule", rules)
+	_ = d.Set("server_ip", firewall.IP)
+	_ = d.Set("whitelist_hos", firewall.WhitelistHetznerServices)
 	d.SetId(firewall.IP)
 
 	results := make([]*schema.ResourceData, 1)
@@ -132,38 +132,53 @@ func resourceFirewallImportState(ctx context.Context, d *schema.ResourceData, m 
 }
 
 func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
-	c := m.(HetznerRobotClient)
+	c, ok := m.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
-	serverIP := d.Get("server_ip").(string)
+	serverIP, _ := d.Get("server_ip").(string)
 
 	status := "disabled"
-	if d.Get("active").(bool) {
+	if active, _ := d.Get("active").(bool); active {
 		status = "active"
 	}
 
 	rules := make([]HetznerRobotFirewallRule, 0)
-	for _, ruleMap := range d.Get("rule").([]any) {
-		ruleProperties := ruleMap.(map[string]any)
+	rules_data, _ := d.Get("rule").([]any)
+	for _, ruleMap := range rules_data {
+		ruleProperties, ok := ruleMap.(map[string]any)
+		if !ok {
+			continue
+		}
 		ipVersion := "ipv4"
 		if v, ok := ruleProperties["ip_version"].(string); ok && v != "" {
 			ipVersion = v
 		}
+		name, _ := ruleProperties["name"].(string)
+		srcIP, _ := ruleProperties["src_ip"].(string)
+		srcPort, _ := ruleProperties["src_port"].(string)
+		dstIP, _ := ruleProperties["dst_ip"].(string)
+		dstPort, _ := ruleProperties["dst_port"].(string)
+		protocol, _ := ruleProperties["protocol"].(string)
+		tcpFlags, _ := ruleProperties["tcp_flags"].(string)
+		action, _ := ruleProperties["action"].(string)
 		rules = append(rules, HetznerRobotFirewallRule{
-			Name:      ruleProperties["name"].(string),
-			SrcIP:     ruleProperties["src_ip"].(string),
-			SrcPort:   ruleProperties["src_port"].(string),
-			DstIP:     ruleProperties["dst_ip"].(string),
-			DstPort:   ruleProperties["dst_port"].(string),
-			Protocol:  ruleProperties["protocol"].(string),
-			TCPFlags:  ruleProperties["tcp_flags"].(string),
-			Action:    ruleProperties["action"].(string),
+			Name:      name,
+			SrcIP:     srcIP,
+			SrcPort:   srcPort,
+			DstIP:     dstIP,
+			DstPort:   dstPort,
+			Protocol:  protocol,
+			TCPFlags:  tcpFlags,
+			Action:    action,
 			IPVersion: ipVersion,
 		})
 	}
 
 	if err := c.setFirewall(ctx, HetznerRobotFirewall{
 		IP:                       serverIP,
-		WhitelistHetznerServices: d.Get("whitelist_hos").(bool),
+		WhitelistHetznerServices: func() bool { val, _ := d.Get("whitelist_hos").(bool); return val }(),
 		Status:                   status,
 		Rules:                    HetznerRobotFirewallRules{Input: rules},
 	}); err != nil {
@@ -179,7 +194,10 @@ func resourceFirewallCreate(ctx context.Context, d *schema.ResourceData, m any) 
 }
 
 func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
-	c := m.(HetznerRobotClient)
+	c, ok := m.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
 	serverIP := d.Id()
 
@@ -188,10 +206,7 @@ func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m any) di
 		return diag.FromErr(err)
 	}
 
-	active := false
-	if firewall.Status == "active" {
-		active = true
-	}
+	active := firewall.Status == "active"
 
 	rules := make([]map[string]any, 0)
 	for _, rule := range firewall.Rules.Input {
@@ -208,10 +223,10 @@ func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m any) di
 		}
 		rules = append(rules, r)
 	}
-	d.Set("active", active)
-	d.Set("rule", rules)
-	d.Set("server_ip", firewall.IP)
-	d.Set("whitelist_hos", firewall.WhitelistHetznerServices)
+	_ = d.Set("active", active)
+	_ = d.Set("rule", rules)
+	_ = d.Set("server_ip", firewall.IP)
+	_ = d.Set("whitelist_hos", firewall.WhitelistHetznerServices)
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
@@ -220,38 +235,53 @@ func resourceFirewallRead(ctx context.Context, d *schema.ResourceData, m any) di
 }
 
 func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
-	c := m.(HetznerRobotClient)
+	c, ok := m.(HetznerRobotClient)
+	if !ok {
+		return diag.Errorf("Unable to cast meta to HetznerRobotClient")
+	}
 
-	serverIP := d.Get("server_ip").(string)
+	serverIP, _ := d.Get("server_ip").(string)
 
 	status := "disabled"
-	if d.Get("active").(bool) {
+	if active, _ := d.Get("active").(bool); active {
 		status = "active"
 	}
 
 	rules := make([]HetznerRobotFirewallRule, 0)
-	for _, ruleMap := range d.Get("rule").([]any) {
-		ruleProperties := ruleMap.(map[string]any)
+	rules_data, _ := d.Get("rule").([]any)
+	for _, ruleMap := range rules_data {
+		ruleProperties, ok := ruleMap.(map[string]any)
+		if !ok {
+			continue
+		}
 		ipVersion := "ipv4"
 		if v, ok := ruleProperties["ip_version"].(string); ok && v != "" {
 			ipVersion = v
 		}
+		name, _ := ruleProperties["name"].(string)
+		srcIP, _ := ruleProperties["src_ip"].(string)
+		srcPort, _ := ruleProperties["src_port"].(string)
+		dstIP, _ := ruleProperties["dst_ip"].(string)
+		dstPort, _ := ruleProperties["dst_port"].(string)
+		protocol, _ := ruleProperties["protocol"].(string)
+		tcpFlags, _ := ruleProperties["tcp_flags"].(string)
+		action, _ := ruleProperties["action"].(string)
 		rules = append(rules, HetznerRobotFirewallRule{
-			Name:      ruleProperties["name"].(string),
-			SrcIP:     ruleProperties["src_ip"].(string),
-			SrcPort:   ruleProperties["src_port"].(string),
-			DstIP:     ruleProperties["dst_ip"].(string),
-			DstPort:   ruleProperties["dst_port"].(string),
-			Protocol:  ruleProperties["protocol"].(string),
-			TCPFlags:  ruleProperties["tcp_flags"].(string),
-			Action:    ruleProperties["action"].(string),
+			Name:      name,
+			SrcIP:     srcIP,
+			SrcPort:   srcPort,
+			DstIP:     dstIP,
+			DstPort:   dstPort,
+			Protocol:  protocol,
+			TCPFlags:  tcpFlags,
+			Action:    action,
 			IPVersion: ipVersion,
 		})
 	}
 
 	if err := c.setFirewall(ctx, HetznerRobotFirewall{
 		IP:                       serverIP,
-		WhitelistHetznerServices: d.Get("whitelist_hos").(bool),
+		WhitelistHetznerServices: func() bool { val, _ := d.Get("whitelist_hos").(bool); return val }(),
 		Status:                   status,
 		Rules:                    HetznerRobotFirewallRules{Input: rules},
 	}); err != nil {
@@ -264,7 +294,7 @@ func resourceFirewallUpdate(ctx context.Context, d *schema.ResourceData, m any) 
 	return diags
 }
 
-func resourceFirewallDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
+func resourceFirewallDelete(_ context.Context, _ *schema.ResourceData, _ any) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
