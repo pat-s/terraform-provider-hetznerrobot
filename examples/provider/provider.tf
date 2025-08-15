@@ -13,7 +13,7 @@ provider "hetzner-robot" {
   password = "yourPasswordFromRobot"
 }
 
-resource "hetzner-robot_firewall" "firewall" {
+resource "hetznerrobot_firewall" "firewall" {
   server_ip     = "1.1.1.1"
   active        = true
   whitelist_hos = true
@@ -24,10 +24,11 @@ resource "hetzner-robot_firewall" "firewall" {
     src_port = "0-65535"
     dst_ip   = "0.0.0.0/0"
     dst_port = "22"
-    protocol  = "tcp"
+    protocol = "tcp"
     #example can be one of syn, fin, rst, psh, urg or more like "syn|fin"
-    tcp_flags= "syn"
-    action   = "accept"
+    tcp_flags  = "syn"
+    action     = "accept"
+    ip_version = "ipv4"
   }
 
   rule {
